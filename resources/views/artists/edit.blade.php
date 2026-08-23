@@ -1,0 +1,41 @@
+@extends('layouts.dashboard')
+
+@section('title', 'Edit: ' . $artist->name)
+@section('header')
+    <h1 class="text-lg font-semibold">Edit Artist</h1>
+@endsection
+
+@section('content')
+<div class="max-w-lg">
+    <form action="{{ route('artists.update', $artist) }}" method="POST" class="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-6 space-y-4">
+        @csrf @method('PUT')
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Name</label>
+            <input type="text" name="name" value="{{ old('name', $artist->name) }}" required
+                   class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('name') border-red-500 @enderror">
+            @error('name')<p class="text-red-400 text-xs mt-1">{{ $message }}</p>@enderror
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Genre</label>
+            <select name="genre_id"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('genre_id') border-red-500 @enderror">
+                <option value="">None</option>
+                @foreach($genres as $genre)
+                    <option value="{{ $genre->id }}" {{ old('genre_id', $artist->genre_id) == $genre->id ? 'selected' : '' }}>{{ $genre->name }}</option>
+                @endforeach
+            </select>
+            @error('genre_id')<p class="text-red-400 text-xs mt-1">{{ $message }}</p>@enderror
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Bio</label>
+            <textarea name="bio" rows="3"
+                      class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('bio') border-red-500 @enderror">{{ old('bio', $artist->bio) }}</textarea>
+            @error('bio')<p class="text-red-400 text-xs mt-1">{{ $message }}</p>@enderror
+        </div>
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition">Update Artist</button>
+            <a href="{{ route('artists.show', $artist) }}" class="text-sm text-gray-400 hover:text-white transition">Cancel</a>
+        </div>
+    </form>
+</div>
+@endsection
