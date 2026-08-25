@@ -14,9 +14,9 @@ COPY . .
 RUN mkdir -p storage/framework/{cache,sessions,views} bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-RUN cp .env.example .env || true
+RUN php artisan package:discover --ansi || true
 RUN php artisan key:generate --force || true
 RUN touch database/database.sqlite
 RUN php artisan migrate --force || true
