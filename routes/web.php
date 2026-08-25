@@ -65,17 +65,6 @@ Route::get('/auth/google', function (App\Services\GoogleDriveService $drive) {
     return redirect($drive->getAuthUrl());
 })->name('auth.google');
 
-Route::get('/debug', function () {
-    return response()->json([
-        'config_client_id' => config('services.google.client_id') ?? 'NULL',
-        'env_client_id' => env('GOOGLE_DRIVE_CLIENT_ID') ?? 'NULL',
-        'getenv_client_id' => getenv('GOOGLE_DRIVE_CLIENT_ID') ?: 'EMPTY',
-        'getenv_redirect' => getenv('GOOGLE_DRIVE_REDIRECT_URI') ?: 'EMPTY',
-        '_ENV_client_id' => $_ENV['GOOGLE_DRIVE_CLIENT_ID'] ?? 'NOT_IN_ENV',
-        '_SERVER_client_id' => $_SERVER['GOOGLE_DRIVE_CLIENT_ID'] ?? 'NOT_IN_SERVER',
-    ]);
-});
-
 Route::get('/auth/callback', function (Illuminate\Http\Request $request, App\Services\GoogleDriveService $drive) {
     $code = $request->input('code');
     if (!$code) {
