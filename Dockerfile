@@ -11,6 +11,9 @@ WORKDIR /var/www/html
 
 COPY . .
 
+RUN mkdir -p storage/framework/{cache,sessions,views} bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 RUN cp .env.example .env || true
@@ -20,7 +23,6 @@ RUN php artisan migrate --force || true
 RUN php artisan config:cache || true
 RUN php artisan route:cache || true
 RUN php artisan view:cache || true
-RUN chmod -R 775 storage bootstrap/cache
 
 EXPOSE 8000
 
