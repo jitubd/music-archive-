@@ -17,13 +17,9 @@ RUN mkdir -p storage/framework/{cache,sessions,views} bootstrap/cache \
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 RUN php artisan package:discover --ansi || true
-RUN php artisan key:generate --force || true
 RUN touch database/database.sqlite
-RUN php artisan migrate --force || true
-RUN php artisan config:cache || true
-RUN php artisan route:cache || true
-RUN php artisan view:cache || true
+RUN chmod 775 database/database.sqlite
 
 EXPOSE 8000
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+CMD ["sh", "-c", "php artisan key:generate --force && php artisan migrate --force && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=8000"]
