@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\SongController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
 
 // Dashboard
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -75,4 +76,22 @@ Route::get('/auth/callback', function (Illuminate\Http\Request $request, App\Ser
     } catch (\Exception $e) {
         return redirect('/')->with('error', 'Authorization failed: ' . $e->getMessage());
     }
+});
+
+// Protected import route (one-time use)
+Route::get('/admin/import', function () {
+    $secret = env('IMPORT_SECRET', 'musicarchive2024');
+    if (request('key') !== $secret) {
+        abort(403);
+    }
+
+    if (!app(\App\Services\GoogleDriveService::class)->isAuthorized()) {
+        return response()->json(['error' => 'Google Drive not authorized. Visit /auth/google first.'], 401);
+    }
+
+    $exitCode = Artisan::call('drive:import', ['rootFolderId' => '1Lp12tPEogQYr3fuhcAKUZ5Mw_lISP1Fi']);
+    return response()->json([
+        'status' => 'Import complete',
+        'output' => Artisan::output(),
+    ]);
 });
