@@ -23,4 +23,4 @@ RUN chmod 775 database/database.sqlite
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "php artisan key:generate --force && php artisan migrate --force && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=8000"]
+CMD ["sh", "-c", "php artisan config:clear && php artisan key:generate --force && php artisan migrate --force && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=8000"]
