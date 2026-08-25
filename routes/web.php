@@ -65,6 +65,23 @@ Route::get('/auth/google', function (App\Services\GoogleDriveService $drive) {
     return redirect($drive->getAuthUrl());
 })->name('auth.google');
 
+Route::get('/debug', function () {
+    return response()->json([
+        'client_id' => config('services.google.client_id') ? 'SET' : 'EMPTY',
+        'redirect_uri' => config('services.google.redirect_uri') ?? 'NULL',
+        'url' => config('services.google.client_id')
+            ? 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
+                'client_id'     => config('services.google.client_id'),
+                'redirect_uri'  => config('services.google.redirect_uri'),
+                'response_type' => 'code',
+                'scope'         => 'https://www.googleapis.com/auth/drive.readonly',
+                'access_type'   => 'offline',
+                'prompt'        => 'consent',
+            ])
+            : 'NO CLIENT ID',
+    ]);
+});
+
 Route::get('/auth/callback', function (Illuminate\Http\Request $request, App\Services\GoogleDriveService $drive) {
     $code = $request->input('code');
     if (!$code) {
