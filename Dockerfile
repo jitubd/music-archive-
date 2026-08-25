@@ -16,6 +16,7 @@ RUN mkdir -p storage/framework/{cache,sessions,views} bootstrap/cache \
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
+RUN cp .env.example .env
 RUN php artisan package:discover --ansi || true
 RUN touch database/database.sqlite
 RUN chmod 775 database/database.sqlite
