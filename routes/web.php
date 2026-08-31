@@ -29,7 +29,13 @@ Route::get('/api/genres/{slug}', [CatalogController::class, 'genre']);
 Route::get('/api/artists/{slug}', [CatalogController::class, 'artist']);
 Route::get('/api/search', [CatalogController::class, 'search']);
 
-// Audio streaming
+// Direct stream URL (browser fetches straight from Google Drive)
+Route::get('/api/songs/{song}/url', function (App\Models\Song $song, App\Services\GoogleDriveService $drive) {
+    return response()->json(['url' => $drive->getDirectUrl($song->drive_file_id)])
+        ->header('Cache-Control', 'public, max-age=3600');
+})->name('song.url');
+
+// Audio streaming (fallback proxy)
 Route::get('/stream/{song}', [CatalogController::class, 'stream'])->name('stream.api');
 
 // Audio download

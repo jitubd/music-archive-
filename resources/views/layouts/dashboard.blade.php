@@ -67,7 +67,6 @@
                 });
         },
         playSong(src, title, artist, songId, albumId) {
-            this.playerSrc = src;
             this.playerTitle = title;
             this.playerArtist = artist;
             this.playerSongId = songId;
@@ -81,7 +80,16 @@
             this.fetchAlbumArt();
             this.fetchLyrics();
             this.stopLyricsLoop();
-            this.$nextTick(() => { this.$refs.audioPlayer.load(); this.$refs.audioPlayer.play(); });
+            fetch('/api/songs/' + songId + '/url')
+                .then(r => r.json())
+                .then(d => {
+                    this.playerSrc = d.url;
+                    this.$nextTick(() => { this.$refs.audioPlayer.load(); this.$refs.audioPlayer.play(); });
+                })
+                .catch(() => {
+                    this.playerSrc = src;
+                    this.$nextTick(() => { this.$refs.audioPlayer.load(); this.$refs.audioPlayer.play(); });
+                });
         },
         syncLyrics() {
             if (!this.lyricsLines.length) return;
