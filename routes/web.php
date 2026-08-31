@@ -85,6 +85,14 @@ Route::get('/admin/auto-import', function () {
     return response()->view('auto-import', ['secret' => $secret])->header('Content-Type', 'text/html');
 });
 
+Route::get('/admin/auto-lyrics', function () {
+    $secret = env('IMPORT_SECRET', 'musicarchive2024');
+    if (request('key') !== $secret) {
+        abort(4003);
+    }
+    return response()->view('auto-lyrics', ['secret' => $secret])->header('Content-Type', 'text/html');
+});
+
 // Protected import route - runs in batches to avoid Render timeout
 Route::get('/admin/import', function () {
     $secret = env('IMPORT_SECRET', 'musicarchive2024');
@@ -179,6 +187,53 @@ Route::get('/admin/import', function () {
             'songs_imported' => $songsImported,
             'done' => $nextBatch === null,
             'run_next' => $nextBatch !== null ? "/admin/import?key={$secret}&batch={$nextBatch}" : null,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+
+// Lyrics fetch - batch from LRCLIB
+Route::get('/admin/fetch-lyrics', function () {
+    $secret = env('IMPORT_SECRET', 'musicarchive2024');
+    if (request('key') !== $secret) {
+        abort(4003);
+    }
+
+    try {
+        $batch = (int) request('batch', 0);
+        $limit = 20;
+
+        $songs = \App\Models\Song::whereNull('lyrics')
+            ->orWhere('lyrics', '')
+            ->with('album.artist')
+            ->skip($batch * $limit)
+            ->take($limit)
+            ->get();
+
+        $totalMissing = \App\Models\Song::whereNull('lyrics')->orWhere('lyrics', '')->count();
+        $found = 0;
+
+        $lyricsService = app(\App\Services\LyricsService::class);
+
+        foreach ($songs as $song) {
+            $lrc = $lyricsService->fetchForSong($song);
+            if ($lrc) {
+                $song->update(['lyrics' => $lrc]);
+                $found++;
+            }
+        }
+
+        $remaining = $totalMissing - $songs->count();
+        $nextBatch = $remaining > 0 ? $batch + 1 : null;
+
+        return response()->json([
+            'batch' => $batch,
+            'checked' => $songs->count(),
+            'found' => $found,
+            'remaining' => $remaining,
+            'done' => $nextBatch === null,
+            'run_next' => $nextBatch !== null ? "/admin/fetch-lyrics?key={$secret}&batch={$nextBatch}" : null,
         ]);
     } catch (\Exception $e) {
         return response()->json(['error' => $e->getMessage()], 500);
