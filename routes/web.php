@@ -85,42 +85,95 @@ Route::get('/admin/import', function () {
         abort(4003);
     }
 
-    $drive = app(\App\Services\GoogleDriveService::class);
-    if (!$drive->isAuthorized()) {
-        return response()->json(['error' => 'Google Drive not authorized. Visit /auth/google first.'], 401);
+    try {
+        $drive = app(\App\Services\GoogleDriveService::class);
+        if (!$drive->isAuthorized()) {
+            return response()->json(['error' => 'Google Drive not authorized. Visit /auth/google first.'], 401);
+        }
+
+        $rootFolderId = '1Lp12tPEogQYr3fuhcAKUZ5Mw_lISP1Fi';
+        $batch = (int) request('batch', 0);
+        $limit = 3;
+
+        $rootChildren = $drive->listChildren($rootFolderId);
+        $rootFolders = array_values(array_filter($rootChildren, fn($f) => $drive->isFolder($f)));
+        $totalFolders = count($rootFolders);
+
+        $start = $batch * $limit;
+        $end = min($start + $limit, $totalFolders);
+        $songsImported = 0;
+
+        for ($i = $start; $i < $end; $i++) {
+            $folder = $rootFolders[$i];
+            $children = $drive->listChildren($folder['id']);
+            $subFolders = array_values(array_filter($children, fn($f) => $drive->isFolder($f)));
+            $audioFiles = array_filter($children, fn($f) => $drive->isAudio($f));
+
+            $artist = \App\Models\Artist::updateOrCreate(
+                ['slug' => \Illuminate\Support\Str::slug($folder['name'])],
+                ['name' => $folder['name'], 'drive_folder_id' => $folder['id']]
+            );
+
+            if (!empty($subFolders)) {
+                foreach ($subFolders as $sub) {
+                    $subChildren = $drive->listChildren($sub['id']);
+                    $subAudio = array_filter($subChildren, fn($f) => $drive->isAudio($f));
+
+                    $album = \App\Models\Album::updateOrCreate(
+                        ['artist_id' => $artist->id, 'slug' => \Illuminate\Support\Str::slug($sub['name'])],
+                        ['title' => $sub['name'], 'drive_folder_id' => $sub['id']]
+                    );
+
+                    foreach ($subAudio as $file) {
+                        $name = preg_replace('/\.[^.]+$/', '', $file['name']);
+                        preg_match('/^(\d{1,3})\s*[-.]\s*(.+)$/', $name, $m);
+                        \App\Models\Song::updateOrCreate(
+                            ['drive_file_id' => $file['id']],
+                            [
+                                'album_id' => $album->id,
+                                'title' => $m ? trim($m[2]) : trim($name),
+                                'track_number' => $m ? (int) $m[1] : null,
+                                'mime_type' => $file['mimeType'],
+                                'size_bytes' => $file['size'] ?? null,
+                            ]
+                        );
+                        $songsImported++;
+                    }
+                }
+            } elseif (!empty($audioFiles)) {
+                $album = \App\Models\Album::updateOrCreate(
+                    ['artist_id' => $artist->id, 'slug' => \Illuminate\Support\Str::slug($folder['name'])],
+                    ['title' => $folder['name'], 'drive_folder_id' => $folder['id']]
+                );
+
+                foreach ($audioFiles as $file) {
+                    $name = preg_replace('/\.[^.]+$/', '', $file['name']);
+                    preg_match('/^(\d{1,3})\s*[-.]\s*(.+)$/', $name, $m);
+                    \App\Models\Song::updateOrCreate(
+                        ['drive_file_id' => $file['id']],
+                        [
+                            'album_id' => $album->id,
+                            'title' => $m ? trim($m[2]) : trim($name),
+                            'track_number' => $m ? (int) $m[1] : null,
+                            'mime_type' => $file['mimeType'],
+                            'size_bytes' => $file['size'] ?? null,
+                        ]
+                    );
+                    $songsImported++;
+                }
+            }
+        }
+
+        $nextBatch = ($end < $totalFolders) ? $batch + 1 : null;
+
+        return response()->json([
+            'batch' => $batch,
+            'folders_processed' => $end . '/' . $totalFolders,
+            'songs_imported' => $songsImported,
+            'done' => $nextBatch === null,
+            'run_next' => $nextBatch !== null ? "/admin/import?key={$secret}&batch={$nextBatch}" : null,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
     }
-
-    $rootFolderId = '1Lp12tPEogQYr3fuhcAKUZ5Mw_lISP1Fi';
-    $batch = (int) request('batch', 0);
-    $limit = 5;
-
-    $rootChildren = $drive->listChildren($rootFolderId);
-    $rootFolders = array_values(array_filter($rootChildren, fn($f) => $drive->isFolder($f)));
-    $totalFolders = count($rootFolders);
-
-    $start = $batch * $limit;
-    $end = min($start + $limit, $totalFolders);
-    $processed = 0;
-    $songs = 0;
-
-    $importer = app(\App\Console\Commands\ImportFromDrive::class);
-
-    for ($i = $start; $i < $end; $i++) {
-        $folder = $rootFolders[$i];
-        $importer->processFolderPublic($folder, null);
-        $processed++;
-        $songs = $importer->getImportedCount();
-    }
-
-    $nextBatch = ($end < $totalFolders) ? $batch + 1 : null;
-
-    return response()->json([
-        'batch' => $batch,
-        'processed' => $processed,
-        'total_folders' => $totalFolders,
-        'songs_imported' => $songs,
-        'next_batch' => $nextBatch,
-        'done' => $nextBatch === null,
-        'run_next' => $nextBatch !== null ? "/admin/import?key={$secret}&batch={$nextBatch}" : null,
-    ]);
 });
