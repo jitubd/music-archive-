@@ -82,16 +82,23 @@ Route::get('/auth/callback', function (Illuminate\Http\Request $request, App\Ser
 Route::get('/admin/import', function () {
     $secret = env('IMPORT_SECRET', 'musicarchive2024');
     if (request('key') !== $secret) {
-        abort(403);
+        abort(4003);
     }
 
-    if (!app(\App\Services\GoogleDriveService::class)->isAuthorized()) {
-        return response()->json(['error' => 'Google Drive not authorized. Visit /auth/google first.'], 401);
+    $drive = app(\App\Services\GoogleDriveService::class);
+    if (!$drive->isAuthorized()) {
+        return response()->json([
+            'error' => 'Google Drive not authorized. Visit /auth/google first.',
+            'token_exists' => file_exists(storage_path('app/google-drive-token.json')),
+        ], 401);
     }
+
+    set_time_limit(0);
 
     $exitCode = Artisan::call('drive:import', ['rootFolderId' => '1Lp12tPEogQYr3fuhcAKUZ5Mw_lISP1Fi']);
     return response()->json([
-        'status' => 'Import complete',
+        'status' => $exitCode === 0 ? 'success' : 'failed',
+        'exit_code' => $exitCode,
         'output' => Artisan::output(),
     ]);
 });
