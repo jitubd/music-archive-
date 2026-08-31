@@ -34,9 +34,7 @@ Route::get('/stream/{song}', [CatalogController::class, 'stream'])->name('stream
 
 // Audio download
 Route::get('/download/{song}', function (App\Models\Song $song, App\Services\GoogleDriveService $drive) {
-    return response()->redirect($drive->getDirectUrl($song->drive_file_id), 302, [
-        'Content-Disposition' => 'attachment',
-    ]);
+    return redirect($drive->getDirectUrl($song->drive_file_id));
 })->name('song.download');
 
 // Lyrics - cache 1 day in browser
