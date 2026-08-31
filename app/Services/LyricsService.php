@@ -25,28 +25,30 @@ class LyricsService
             return null;
         }
 
-        $response = Http::timeout(10)
-            ->withHeaders(['User-Agent' => 'MusicArchive v1.0 (Laravel)'])
-            ->get("{$this->baseUrl}/api/get", array_filter([
-                'artist_name' => $artist,
-                'track_name'  => $title,
-                'album_name'  => $album,
-                'duration'    => $duration ?: null,
-            ]));
-
-        if ($response->successful()) {
-            $data = $response->json();
-            return $data['syncedLyrics'] ?? $data['plainLyrics'] ?? null;
-        }
-
-        if ($response->status() === 404) {
-            return null;
-        }
-
-        Log::warning("LRCLIB request failed", [
-            'song'   => $song->id,
-            'status' => $response->status(),
+        $params = array_filter([
+            'artist_name' => $artist,
+            'track_name'  => $title,
+            'album_name'  => $album,
+            'duration'    => $duration ?: null,
         ]);
+
+        try {
+            $response = Http::timeout(30)
+                ->retry(2, 2000)
+                ->withHeaders(['User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'])
+                ->get("{$this->baseUrl}/api/get", $params);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return $data['syncedLyrics'] ?? $data['plainLyrics'] ?? null;
+            }
+
+            if ($response->status() === 404) {
+                return null;
+            }
+        } catch (\Exception $e) {
+            Log::warning("LRCLIB request failed for song {$song->id}: {$e->getMessage()}");
+        }
 
         return null;
     }
