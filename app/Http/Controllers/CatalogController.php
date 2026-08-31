@@ -64,6 +64,10 @@ class CatalogController extends Controller
      */
     public function stream(Request $request, Song $song, GoogleDriveService $drive)
     {
-        return redirect()->away($drive->getDirectUrl($song->drive_file_id));
+        return $drive->streamFile(
+            $song->drive_file_id,
+            $request->header('Range'),
+            $song->mime_type ?: 'audio/mpeg'
+        );
     }
 }

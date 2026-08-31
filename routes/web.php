@@ -32,11 +32,13 @@ Route::get('/api/search', [CatalogController::class, 'search']);
 // Audio streaming
 Route::get('/stream/{song}', [CatalogController::class, 'stream'])->name('stream.api');
 
-// Audio download - redirect to Google Drive directly
+// Audio download
 Route::get('/download/{song}', function (App\Models\Song $song, App\Services\GoogleDriveService $drive) {
-    $filename = $song->album->artist->name . ' - ' . $song->title . '.' . ($song->mime_type === 'audio/flac' ? 'flac' : 'mp3');
-    $filename = preg_replace('/[^\w\s\-\.]/', '', $filename);
-    return redirect()->away($drive->getDirectUrl($song->drive_file_id));
+    return $drive->downloadFile(
+        $song->drive_file_id,
+        $song->album->artist->name . ' - ' . $song->title . '.' . ($song->mime_type === 'audio/flac' ? 'flac' : 'mp3'),
+        $song->mime_type ?: 'audio/mpeg'
+    );
 })->name('song.download');
 
 // Lyrics - cache 1 day in browser
