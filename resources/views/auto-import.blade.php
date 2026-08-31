@@ -43,11 +43,11 @@
                     status.textContent = `Import complete! ${totalSongs} songs imported.`;
                 } else {
                     batch = data.run_next.split('batch=')[1];
-                    setTimeout(runBatch, 1000);
+                    setTimeout(runBatch, 3000);
                 }
             } catch (e) {
-                log.innerHTML += `<span class="error">NETWORK ERROR: ${e.message}. Retrying in 5s...</span>\n`;
-                setTimeout(runBatch, 5000);
+                log.innerHTML += `<span class="error">NETWORK ERROR: ${e.message}. Retrying in 10s...</span>\n`;
+                setTimeout(runBatch, 10000);
             }
         }
 
