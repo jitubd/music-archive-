@@ -3,30 +3,45 @@
 namespace App\Services;
 
 use GuzzleHttp\Client as Guzzle;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class GoogleDriveService
 {
     protected Guzzle $http;
-    protected string $tokenPath;
     protected ?array $token = null;
+    protected bool $tokenLoaded = false;
 
     public function __construct()
     {
-        $this->tokenPath = storage_path('app/google-drive-token.json');
         $this->http = new Guzzle(['base_uri' => 'https://www.googleapis.com']);
-        $this->loadToken();
     }
 
     protected function loadToken(): void
     {
-        if (file_exists($this->tokenPath)) {
-            $this->token = json_decode(file_get_contents($this->tokenPath), true);
+        if ($this->tokenLoaded) {
+            return;
         }
+        $this->tokenLoaded = true;
+
+        $row = DB::table('google_tokens')->where('key', 'drive_token')->first();
+        if ($row) {
+            $this->token = json_decode($row->value, true);
+        }
+    }
+
+    protected function saveToken(): void
+    {
+        DB::table('google_tokens')->updateOrInsert(
+            ['key' => 'drive_token'],
+            ['value' => json_encode($this->token), 'updated_at' => now()]
+        );
     }
 
     protected function getAccessToken(): string
     {
+        $this->loadToken();
+
         if ($this->token && isset($this->token['access_token'])) {
             if (empty($this->token['expires_at']) || $this->token['expires_at'] > time()) {
                 return $this->token['access_token'];
@@ -36,7 +51,7 @@ class GoogleDriveService
                 return $this->token['access_token'];
             }
         }
-        abort(401, 'Not authorized with Google Drive. Run: php artisan drive:authorize');
+        abort(401, 'Not authorized with Google Drive. Visit /auth/google first.');
     }
 
     protected function refreshToken(): void
@@ -53,12 +68,13 @@ class GoogleDriveService
         $data = json_decode($response->getBody(), true);
         $this->token['access_token'] = $data['access_token'];
         $this->token['expires_at'] = time() + ($data['expires_in'] ?? 3600);
-        file_put_contents($this->tokenPath, json_encode($this->token));
+        $this->saveToken();
     }
 
     public function isAuthorized(): bool
     {
-        return file_exists($this->tokenPath) && !empty($this->token['access_token']);
+        $this->loadToken();
+        return !empty($this->token['access_token']);
     }
 
     public function getAuthUrl(): string
@@ -88,7 +104,7 @@ class GoogleDriveService
         $data = json_decode($response->getBody(), true);
         $this->token = $data;
         $this->token['expires_at'] = time() + ($data['expires_in'] ?? 3600);
-        file_put_contents($this->tokenPath, json_encode($this->token));
+        $this->saveToken();
 
         return $data;
     }
