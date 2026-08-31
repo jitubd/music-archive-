@@ -1,8 +1,8 @@
 FROM php:8.1-cli
 
 RUN apt-get update && apt-get install -y \
-    git curl zip unzip libpng-dev libonig-dev libxml2-dev libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    git curl zip unzip libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
+    && docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -19,8 +19,6 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-script
 RUN cp .env.example .env
 RUN sed -i 's/\r$//' .env
 RUN php artisan package:discover --ansi || true
-RUN touch database/database.sqlite
-RUN chmod 775 database/database.sqlite
 
 EXPOSE 8000
 
