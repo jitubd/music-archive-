@@ -39,11 +39,13 @@
                         <td class="px-5 py-3 text-right text-gray-400">{{ $album->songs_count }}</td>
                         <td class="px-5 py-3 text-right">
                             <div class="flex items-center justify-end gap-2">
+                                @auth
                                 <a href="{{ route('albums.edit', $album) }}" class="text-gray-400 hover:text-white transition">Edit</a>
                                 <form action="{{ route('albums.destroy', $album) }}" method="POST" onsubmit="return confirm('Delete this album?')">
                                     @csrf @method('DELETE')
                                     <button class="text-gray-400 hover:text-red-400 transition">Delete</button>
                                 </form>
+                                @endauth
                             </div>
                         </td>
                     </tr>

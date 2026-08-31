@@ -157,6 +157,11 @@ class GoogleDriveService
             || preg_match('/\.(mp3|m4a|flac|wav|ogg)$/i', $file['name']);
     }
 
+    public function getDirectUrl(string $fileId): string
+    {
+        return "https://www.googleapis.com/drive/v3/files/{$fileId}?alt=media&access_token=" . $this->getAccessToken();
+    }
+
     public function streamFile(string $fileId, ?string $rangeHeader, ?string $mimeType = 'audio/mpeg'): StreamedResponse
     {
         $headers = [
@@ -188,7 +193,7 @@ class GoogleDriveService
 
         return new StreamedResponse(function () use ($body) {
             while (!$body->eof()) {
-                echo $body->read(1024 * 256);
+                echo $body->read(1024 * 1024);
                 flush();
             }
         }, $status, $respHeaders);
@@ -214,7 +219,7 @@ class GoogleDriveService
 
         return new StreamedResponse(function () use ($body) {
             while (!$body->eof()) {
-                echo $body->read(1024 * 256);
+                echo $body->read(1024 * 1024);
                 flush();
             }
         }, 200, $respHeaders);

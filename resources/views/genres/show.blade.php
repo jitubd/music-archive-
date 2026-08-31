@@ -14,11 +14,13 @@
     <div class="flex items-center justify-between">
         <p class="text-sm text-gray-400">{{ $genre->artists->count() }} {{ Str::plural('artist', $genre->artists->count()) }}</p>
         <div class="flex items-center gap-3">
+            @auth
             <a href="{{ route('genres.edit', $genre) }}" class="text-sm text-gray-400 hover:text-white transition">Edit</a>
             <form action="{{ route('genres.destroy', $genre) }}" method="POST" onsubmit="return confirm('Delete this genre and all its data?')">
                 @csrf @method('DELETE')
                 <button class="text-sm text-gray-400 hover:text-red-400 transition">Delete</button>
             </form>
+            @endauth
         </div>
     </div>
 

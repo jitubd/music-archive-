@@ -43,11 +43,13 @@
         <div class="px-4 sm:px-5 py-3 border-b border-gray-800 bg-gray-800/30 flex items-center justify-between">
             <h3 class="font-semibold">Details</h3>
             <div class="flex items-center gap-3">
+                @auth
                 <a href="{{ route('songs.edit', $song) }}" class="text-sm text-gray-400 hover:text-white transition">Edit</a>
                 <form action="{{ route('songs.destroy', $song) }}" method="POST" onsubmit="return confirm('Delete this song?')">
                     @csrf @method('DELETE')
                     <button class="text-sm text-gray-400 hover:text-red-400 transition">Delete</button>
                 </form>
+                @endauth
             </div>
         </div>
         <div class="divide-y divide-gray-800">

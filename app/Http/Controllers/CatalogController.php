@@ -62,12 +62,8 @@ class CatalogController extends Controller
      * Streams the audio file straight from Drive. The <audio> element's
      * src should point here, e.g. /stream/{song}.
      */
-    public function stream(Request $request, Song $song, GoogleDriveService $drive): StreamedResponse
+    public function stream(Request $request, Song $song, GoogleDriveService $drive)
     {
-        return $drive->streamFile(
-            $song->drive_file_id,
-            $request->header('Range'),
-            $song->mime_type ?: 'audio/mpeg'
-        );
+        return redirect()->away($drive->getDirectUrl($song->drive_file_id));
     }
 }

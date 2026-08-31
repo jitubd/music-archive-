@@ -33,11 +33,13 @@
                 @endif
             </div>
             <div class="flex items-center gap-3 flex-shrink-0 self-start">
+                @auth
                 <a href="{{ route('artists.edit', $artist) }}" class="text-sm text-gray-400 hover:text-white transition">Edit</a>
                 <form action="{{ route('artists.destroy', $artist) }}" method="POST" onsubmit="return confirm('Delete this artist and all their albums/songs?')">
                     @csrf @method('DELETE')
                     <button class="text-sm text-gray-400 hover:text-red-400 transition">Delete</button>
                 </form>
+                @endauth
             </div>
         </div>
     </div>

@@ -60,11 +60,13 @@
                         </td>
                         <td class="px-5 py-3 text-right">
                             <div class="flex items-center justify-end gap-2">
+                                @auth
                                 <a href="{{ route('songs.edit', $song) }}" class="text-gray-400 hover:text-white transition">Edit</a>
                                 <form action="{{ route('songs.destroy', $song) }}" method="POST" onsubmit="return confirm('Delete this song?')">
                                     @csrf @method('DELETE')
                                     <button class="text-gray-400 hover:text-red-400 transition">Delete</button>
                                 </form>
+                                @endauth
                             </div>
                         </td>
                     </tr>
@@ -95,7 +97,9 @@
                     @if($song->mood)
                         <span class="text-xs bg-gray-800 px-2 py-0.5 rounded-full text-gray-300 hidden">{{ $song->mood }}</span>
                     @endif
+                    @auth
                     <a href="{{ route('songs.edit', $song) }}" class="text-xs text-gray-400 hover:text-white">Edit</a>
+                    @endauth
                 </div>
             </div>
         @empty
