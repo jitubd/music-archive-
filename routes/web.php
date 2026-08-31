@@ -78,6 +78,15 @@ Route::get('/auth/callback', function (Illuminate\Http\Request $request, App\Ser
     }
 });
 
+// Auto-import page - runs all batches automatically
+Route::get('/admin/auto-import', function () {
+    $secret = env('IMPORT_SECRET', 'musicarchive2024');
+    if (request('key') !== $secret) {
+        abort(4003);
+    }
+    return response()->view('auto-import', ['secret' => $secret])->header('Content-Type', 'text/html');
+});
+
 // Protected import route - runs in batches to avoid Render timeout
 Route::get('/admin/import', function () {
     $secret = env('IMPORT_SECRET', 'musicarchive2024');
