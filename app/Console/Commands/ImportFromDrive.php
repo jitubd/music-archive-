@@ -84,6 +84,17 @@ class ImportFromDrive extends Command
         return self::SUCCESS;
     }
 
+    public function processFolderPublic(array $folder, ?int $parentId): void
+    {
+        $stats = ['genres' => 0, 'artists' => 0, 'albums' => 0, 'songs' => 0];
+        $this->processFolder($folder, $parentId, $stats);
+    }
+
+    public function getImportedCount(): int
+    {
+        return $this->imported;
+    }
+
     protected function processFolder(array $folder, ?int $parentId, array &$stats): void
     {
         $children = $this->driveService->listChildren($folder['id']);

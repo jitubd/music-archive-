@@ -78,7 +78,7 @@ Route::get('/auth/callback', function (Illuminate\Http\Request $request, App\Ser
     }
 });
 
-// Protected import route (one-time use)
+// Protected import route - runs in batches to avoid Render timeout
 Route::get('/admin/import', function () {
     $secret = env('IMPORT_SECRET', 'musicarchive2024');
     if (request('key') !== $secret) {
@@ -87,18 +87,40 @@ Route::get('/admin/import', function () {
 
     $drive = app(\App\Services\GoogleDriveService::class);
     if (!$drive->isAuthorized()) {
-        return response()->json([
-            'error' => 'Google Drive not authorized. Visit /auth/google first.',
-            'token_exists' => file_exists(storage_path('app/google-drive-token.json')),
-        ], 401);
+        return response()->json(['error' => 'Google Drive not authorized. Visit /auth/google first.'], 401);
     }
 
-    set_time_limit(0);
+    $rootFolderId = '1Lp12tPEogQYr3fuhcAKUZ5Mw_lISP1Fi';
+    $batch = (int) request('batch', 0);
+    $limit = 5;
 
-    $exitCode = Artisan::call('drive:import', ['rootFolderId' => '1Lp12tPEogQYr3fuhcAKUZ5Mw_lISP1Fi']);
+    $rootChildren = $drive->listChildren($rootFolderId);
+    $rootFolders = array_values(array_filter($rootChildren, fn($f) => $drive->isFolder($f)));
+    $totalFolders = count($rootFolders);
+
+    $start = $batch * $limit;
+    $end = min($start + $limit, $totalFolders);
+    $processed = 0;
+    $songs = 0;
+
+    $importer = app(\App\Console\Commands\ImportFromDrive::class);
+
+    for ($i = $start; $i < $end; $i++) {
+        $folder = $rootFolders[$i];
+        $importer->processFolderPublic($folder, null);
+        $processed++;
+        $songs = $importer->getImportedCount();
+    }
+
+    $nextBatch = ($end < $totalFolders) ? $batch + 1 : null;
+
     return response()->json([
-        'status' => $exitCode === 0 ? 'success' : 'failed',
-        'exit_code' => $exitCode,
-        'output' => Artisan::output(),
+        'batch' => $batch,
+        'processed' => $processed,
+        'total_folders' => $totalFolders,
+        'songs_imported' => $songs,
+        'next_batch' => $nextBatch,
+        'done' => $nextBatch === null,
+        'run_next' => $nextBatch !== null ? "/admin/import?key={$secret}&batch={$nextBatch}" : null,
     ]);
 });
