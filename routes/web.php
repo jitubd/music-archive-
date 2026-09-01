@@ -46,16 +46,20 @@ Route::get('/admin/warm', function () {
     }
     try {
         $controller = app(\App\Http\Controllers\DashboardController::class);
-        $dashboard = $controller->index()->getData();
+        $controller->index()->getData();
 
-        \App\Models\Genre::withCount('artists')->orderBy('name')->get();
-        \App\Models\Artist::with('genre')->withCount('albums')->orderBy('name')->get();
-        \App\Models\Album::with('artist')->withCount('songs')->orderBy('title')->get();
-        \App\Models\Song::with('album.artist')->orderBy('title')->get();
+        app(\App\Http\Controllers\GenreController::class)->index()->getData();
+        app(\App\Http\Controllers\ArtistController::class)->index()->getData();
+        app(\App\Http\Controllers\AlbumController::class)->index()->getData();
+        app(\App\Http\Controllers\SongController::class)->index()->getData();
 
         return response()->json([
             'dashboard_cached' => \Illuminate\Support\Facades\Cache::has('dashboard_stats'),
-            'message' => 'Cache warmed on ' . now()->toDateTimeString() . '. First user load will now be fast.',
+            'genres_index_cached' => \Illuminate\Support\Facades\Cache::has('genres_index_p1'),
+            'artists_index_cached' => \Illuminate\Support\Facades\Cache::has('artists_index_p1'),
+            'albums_index_cached' => \Illuminate\Support\Facades\Cache::has('albums_index_p1'),
+            'songs_index_cached' => \Illuminate\Support\Facades\Cache::has('songs_index_p1'),
+            'message' => 'All caches warmed on ' . now()->toDateTimeString() . '. First user load will now be fast.',
         ]);
     } catch (\Exception $e) {
         return response()->json(['error' => $e->getMessage()], 500);
