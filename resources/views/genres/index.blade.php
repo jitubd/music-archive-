@@ -9,9 +9,11 @@
 <div>
     <div class="flex items-center justify-between mb-4">
         <p class="text-sm text-gray-400">{{ $genres->total() }} {{ Str::plural('genre', $genres->total()) }}</p>
+        @auth
         <a href="{{ route('genres.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
             + New Genre
         </a>
+        @endauth
     </div>
 
     {{-- Desktop table --}}

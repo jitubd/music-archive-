@@ -5,16 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>@yield('title', 'Music Archive') — Dashboard</title>
-    <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script async src="https://cdn.tailwindcss.com"></script>
     <style>
         [x-cloak] { display: none !important; }
         .audio-player::-webkit-media-controls-panel { background: #1f2937; }
         .lyrics-scroll { scrollbar-width: none; -ms-overflow-style: none; }
         .lyrics-scroll::-webkit-scrollbar { display: none; }
+        html { background-color: #030712; color: #f3f4f6; }
+        body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background-color: #030712; color: #f3f4f6; }
+        .tw-fallback { min-height: 100vh; }
+        .tw-fallback aside { position: fixed; inset: 0 auto 0 0; width: 16rem; background: #111827; border-right: 1px solid #1f2937; }
+        .tw-fallback .main { margin-left: 16rem; padding: 1rem; }
+        .tw-fallback a { color: #cbd5e1; text-decoration: none; display: block; padding: 0.5rem 0.75rem; border-radius: 0.5rem; margin: 0.125rem 0; }
+        .tw-fallback a:hover { background: #1f2937; color: #fff; }
+        .tw-fallback h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
     </style>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 </head>

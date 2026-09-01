@@ -47,7 +47,9 @@
     {{-- Albums --}}
     <div class="flex items-center justify-between">
         <h3 class="font-semibold">Albums</h3>
+        @auth
         <a href="{{ route('albums.create', ['artist_id' => $artist->id]) }}" class="text-sm text-indigo-400 hover:text-indigo-300 transition">+ Add Album</a>
+        @endauth
     </div>
 
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">

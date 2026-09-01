@@ -33,8 +33,8 @@
                 </div>
             </div>
             <div class="flex items-center gap-3 flex-shrink-0">
-                <a href="{{ route('songs.create', ['album_id' => $album->id]) }}" class="text-sm text-indigo-400 hover:text-indigo-300 transition">+ Add Song</a>
                 @auth
+                <a href="{{ route('songs.create', ['album_id' => $album->id]) }}" class="text-sm text-indigo-400 hover:text-indigo-300 transition">+ Add Song</a>
                 <a href="{{ route('albums.edit', $album) }}" class="text-sm text-gray-400 hover:text-white transition">Edit</a>
                 <form action="{{ route('albums.destroy', $album) }}" method="POST" onsubmit="return confirm('Delete this album and all its songs?')">
                     @csrf @method('DELETE')
@@ -96,7 +96,9 @@
             @empty
                 <div class="px-5 py-8 text-center text-gray-500 text-sm">
                     No songs in this album yet.
+                    @auth
                     <a href="{{ route('songs.create', ['album_id' => $album->id]) }}" class="text-indigo-400 hover:text-indigo-300 ml-1">Add one</a>
+                    @endauth
                 </div>
             @endforelse
         </div>

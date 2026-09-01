@@ -10,18 +10,18 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 
 // Dashboard
-Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard')->middleware('cache.headers:public;max_age=60');
 Route::get('/dashboard/search', [DashboardController::class, 'search'])->name('dashboard.search');
 
 // CRUD resources
 Route::resource('genres', GenreController::class)->except(['show']);
-Route::get('genres/{genre}', [GenreController::class, 'show'])->name('genres.show');
+Route::get('genres/{genre}', [GenreController::class, 'show'])->name('genres.show')->middleware('cache.headers:public;max_age=60');
 Route::resource('artists', ArtistController::class)->except(['show']);
-Route::get('artists/{artist}', [ArtistController::class, 'show'])->name('artists.show');
+Route::get('artists/{artist}', [ArtistController::class, 'show'])->name('artists.show')->middleware('cache.headers:public;max_age=60');
 Route::resource('albums', AlbumController::class)->except(['show']);
-Route::get('albums/{album}', [AlbumController::class, 'show'])->name('albums.show');
+Route::get('albums/{album}', [AlbumController::class, 'show'])->name('albums.show')->middleware('cache.headers:public;max_age=60');
 Route::resource('songs', SongController::class)->except(['show']);
-Route::get('songs/{song}', [SongController::class, 'show'])->name('songs.show');
+Route::get('songs/{song}', [SongController::class, 'show'])->name('songs.show')->middleware('cache.headers:public;max_age=60');
 
 // JSON API (for frontend consumption)
 Route::get('/api/catalog', [CatalogController::class, 'home']);
