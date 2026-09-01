@@ -12,10 +12,13 @@ class AlbumController extends Controller
 {
     public function index()
     {
-        $albums = Album::with('artist')
-            ->withCount('songs')
-            ->orderBy('title')
-            ->paginate(20);
+        $page = request('page', 1);
+        $albums = Cache::remember("albums_index_p{$page}", 3600, function () {
+            return Album::with('artist')
+                ->withCount('songs')
+                ->orderBy('title')
+                ->paginate(20);
+        });
 
         return view('albums.index', compact('albums'));
     }
@@ -42,18 +45,22 @@ class AlbumController extends Controller
         ]);
 
         Cache::forget('dashboard_stats');
+        Cache::forget('dashboard_recent_songs');
+        Cache::forget('dashboard_recent_artists');
 
         return redirect()->route('albums.show', $album)->with('success', 'Album created.');
     }
 
     public function show(Album $album)
     {
-        $album->load([
-            'artist.genre',
-            'songs' => function ($q) {
-                $q->with('tags')->orderBy('track_number');
-            },
-        ]);
+        $album = Cache::remember("album_show_{$album->id}", 3600, function () use ($album) {
+            return Album::with([
+                'artist.genre',
+                'songs' => function ($q) {
+                    $q->with('tags')->orderBy('track_number');
+                },
+            ])->find($album->id);
+        });
 
         return view('albums.show', compact('album'));
     }
@@ -80,6 +87,9 @@ class AlbumController extends Controller
         ]);
 
         Cache::forget('dashboard_stats');
+        Cache::forget('dashboard_recent_songs');
+        Cache::forget('dashboard_recent_artists');
+        Cache::forget("album_show_{$album->id}");
 
         return redirect()->route('albums.show', $album)->with('success', 'Album updated.');
     }
@@ -87,8 +97,13 @@ class AlbumController extends Controller
     public function destroy(Album $album)
     {
         $artist = $album->artist;
+        $albumId = $album->id;
         $album->delete();
         Cache::forget('dashboard_stats');
+        Cache::forget('dashboard_recent_songs');
+        Cache::forget('dashboard_recent_artists');
+        Cache::forget("album_show_{$albumId}");
+        Cache::forget("artists_index_p1");
         return redirect()->route('artists.show', $artist)->with('success', 'Album deleted.');
     }
 }

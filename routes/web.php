@@ -36,7 +36,31 @@ Route::get('/api/songs/{song}/url', function (App\Models\Song $song, App\Service
 })->name('song.url');
 
 // Audio streaming (fallback proxy)
-Route::get('/stream/{song}', [CatalogController::class, 'stream'])->name('stream.api');
+Route::get('/stream/{songId}', [CatalogController::class, 'stream'])->name('stream.api');
+
+// Warm the cache so the first real page load is fast
+Route::get('/admin/warm', function () {
+    $secret = env('IMPORT_SECRET', 'musicarchive2024');
+    if (request('key') !== $secret) {
+        abort(4003);
+    }
+    try {
+        $controller = app(\App\Http\Controllers\DashboardController::class);
+        $dashboard = $controller->index()->getData();
+
+        \App\Models\Genre::withCount('artists')->orderBy('name')->get();
+        \App\Models\Artist::with('genre')->withCount('albums')->orderBy('name')->get();
+        \App\Models\Album::with('artist')->withCount('songs')->orderBy('title')->get();
+        \App\Models\Song::with('album.artist')->orderBy('title')->get();
+
+        return response()->json([
+            'dashboard_cached' => \Illuminate\Support\Facades\Cache::has('dashboard_stats'),
+            'message' => 'Cache warmed on ' . now()->toDateTimeString() . '. First user load will now be fast.',
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
 
 // Audio download
 Route::get('/download/{song}', function (App\Models\Song $song, App\Services\GoogleDriveService $drive) {

@@ -12,9 +12,12 @@ class SongController extends Controller
 {
     public function index()
     {
-        $songs = Song::with('album.artist')
-            ->orderBy('title')
-            ->paginate(30);
+        $page = request('page', 1);
+        $songs = Cache::remember("songs_index_p{$page}", 3600, function () {
+            return Song::with('album.artist')
+                ->orderBy('title')
+                ->paginate(30);
+        });
 
         return view('songs.index', compact('songs'));
     }
@@ -51,6 +54,9 @@ class SongController extends Controller
         }
 
         Cache::forget('dashboard_stats');
+        Cache::forget('dashboard_recent_songs');
+        Cache::forget("album_show_{$validated['album_id']}");
+        Cache::forget("songs_index_p1");
 
         $album = Album::find($validated['album_id']);
         return redirect()->route('albums.show', $album)->with('success', 'Song created.');
@@ -58,7 +64,9 @@ class SongController extends Controller
 
     public function show(Song $song)
     {
-        $song->load('album.artist', 'tags');
+        $song = Cache::remember("song_show_{$song->id}", 3600, function () use ($song) {
+            return Song::with('album.artist', 'tags')->find($song->id);
+        });
         return view('songs.show', compact('song'));
     }
 
@@ -93,6 +101,10 @@ class SongController extends Controller
         $song->tags()->sync($validated['tags'] ?? []);
 
         Cache::forget('dashboard_stats');
+        Cache::forget('dashboard_recent_songs');
+        Cache::forget("song_show_{$song->id}");
+        Cache::forget("album_show_{$song->album_id}");
+        Cache::forget("songs_index_p1");
 
         return redirect()->route('songs.show', $song)->with('success', 'Song updated.');
     }
@@ -100,8 +112,14 @@ class SongController extends Controller
     public function destroy(Song $song)
     {
         $album = $song->album;
+        $albumId = $song->album_id;
+        $songId = $song->id;
         $song->delete();
         Cache::forget('dashboard_stats');
+        Cache::forget('dashboard_recent_songs');
+        Cache::forget("song_show_{$songId}");
+        Cache::forget("album_show_{$albumId}");
+        Cache::forget("songs_index_p1");
         return redirect()->route('albums.show', $album)->with('success', 'Song deleted.');
     }
 }

@@ -11,7 +11,10 @@ class GenreController extends Controller
 {
     public function index()
     {
-        $genres = Genre::withCount('artists')->orderBy('name')->paginate(20);
+        $page = request('page', 1);
+        $genres = Cache::remember("genres_index_p{$page}", 3600, function () {
+            return Genre::withCount('artists')->orderBy('name')->paginate(20);
+        });
         return view('genres.index', compact('genres'));
     }
 
@@ -32,15 +35,19 @@ class GenreController extends Controller
         ]);
 
         Cache::forget('dashboard_stats');
+        Cache::forget('dashboard_top_genres');
+        Cache::forget("genres_index_p1");
 
         return redirect()->route('genres.index')->with('success', 'Genre created.');
     }
 
     public function show(Genre $genre)
     {
-        $genre->load(['artists' => function ($q) {
-            $q->withCount('albums')->orderBy('name');
-        }]);
+        $genre = Cache::remember("genre_show_{$genre->id}", 3600, function () use ($genre) {
+            return Genre::with(['artists' => function ($q) {
+                $q->withCount('albums')->orderBy('name');
+            }])->find($genre->id);
+        });
 
         return view('genres.show', compact('genre'));
     }
@@ -62,6 +69,9 @@ class GenreController extends Controller
         ]);
 
         Cache::forget('dashboard_stats');
+        Cache::forget('dashboard_top_genres');
+        Cache::forget("genres_index_p1");
+        Cache::forget("genre_show_{$genre->id}");
 
         return redirect()->route('genres.index')->with('success', 'Genre updated.');
     }
@@ -70,6 +80,9 @@ class GenreController extends Controller
     {
         $genre->delete();
         Cache::forget('dashboard_stats');
+        Cache::forget('dashboard_top_genres');
+        Cache::forget("genres_index_p1");
+        Cache::forget("genre_show_{$genre->id}");
         return redirect()->route('genres.index')->with('success', 'Genre deleted.');
     }
 }

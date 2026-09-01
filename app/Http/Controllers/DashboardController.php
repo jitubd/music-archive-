@@ -14,7 +14,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $stats = Cache::remember('dashboard_stats', 300, function () {
+        $stats = Cache::remember('dashboard_stats', 3600, function () {
             return [
                 'genres'     => Genre::count(),
                 'artists'    => Artist::count(),
@@ -25,19 +25,38 @@ class DashboardController extends Controller
             ];
         });
 
-        $recentSongs = Song::with('album.artist', 'tags')
-            ->latest()
-            ->limit(10)
-            ->get();
+        $recentSongs = Cache::remember('dashboard_recent_songs', 3600, function () {
+            return Song::with('album.artist', 'tags')
+                ->latest()
+                ->limit(10)
+                ->get();
+        });
 
-        $recentArtists = Artist::with('genre')
-            ->latest()
-            ->limit(6)
-            ->get();
+        $recentArtists = Cache::remember('dashboard_recent_artists', 3600, function () {
+            return Artist::with('genre')
+                ->latest()
+                ->limit(6)
+                ->get();
+        });
 
-        $topGenres = Genre::withCount('artists')->orderByDesc('artists_count')->get();
+        $topGenres = Cache::remember('dashboard_top_genres', 3600, function () {
+            return Genre::withCount('artists')->orderByDesc('artists_count')->get();
+        });
 
         return view('dashboard.index', compact('stats', 'recentSongs', 'recentArtists', 'topGenres'));
+    }
+
+    public function warm()
+    {
+        $status = $this->index()->getData();
+
+        return response()->json([
+            'dashboard_cached' => Cache::has('dashboard_stats'),
+            'recent_songs_cached' => Cache::has('dashboard_recent_songs'),
+            'recent_artists_cached' => Cache::has('dashboard_recent_artists'),
+            'top_genres_cached' => Cache::has('dashboard_top_genres'),
+            'message' => 'Cache warmed. First real page load will now be fast.',
+        ]);
     }
 
     public function search(Request $request)
