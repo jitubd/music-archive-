@@ -134,6 +134,36 @@ Route::prefix('admin/tags')->middleware('auth.secret')->group(function () {
     Route::delete('/{tag}', [TagController::class, 'destroy'])->name('admin.tags.destroy');
 });
 
+// Bulk create suggested tags
+Route::get('/admin/create-tags', function () {
+    $secret = env('IMPORT_SECRET', 'musicarchive2024');
+    if (request('key') !== $secret) {
+        abort(4003);
+    }
+
+    $tags = [
+        'chill', 'upbeat', 'sad', 'romantic', 'angry',
+        'workout', 'study', 'sleep', 'party', 'road trip', 'work',
+        'favorite', 'classic', 'discover',
+    ];
+
+    $created = 0;
+    foreach ($tags as $name) {
+        $tag = \App\Models\Tag::firstOrCreate(['name' => $name]);
+        if ($tag->wasRecentlyCreated) {
+            $created++;
+        }
+    }
+
+    \Illuminate\Support\Facades\Cache::forget('dashboard_stats');
+
+    return response()->json([
+        'tags_created' => $created,
+        'total_tags' => \App\Models\Tag::count(),
+        'message' => "{$created} new tags created. Total: " . \App\Models\Tag::count(),
+    ]);
+});
+
 // Auto-import page - runs all batches automatically
 Route::get('/admin/auto-import', function () {
     $secret = env('IMPORT_SECRET', 'musicarchive2024');
