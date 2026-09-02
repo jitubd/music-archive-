@@ -130,8 +130,8 @@ Route::get('/auth/callback', function (Illuminate\Http\Request $request, App\Ser
 // Tag management (admin tools)
 Route::prefix('admin/tags')->middleware('auth.secret')->group(function () {
     Route::get('/', [TagController::class, 'index'])->name('admin.tags');
-    Route::post('/', [TagController::class, 'store']);
-    Route::delete('/{tag}', [TagController::class, 'destroy']);
+    Route::post('/', [TagController::class, 'store'])->name('admin.tags.store');
+    Route::delete('/{tag}', [TagController::class, 'destroy'])->name('admin.tags.destroy');
 });
 
 // Auto-import page - runs all batches automatically
