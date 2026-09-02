@@ -6,6 +6,7 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\SongController;
+use App\Http\Controllers\TagController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 
@@ -124,6 +125,13 @@ Route::get('/auth/callback', function (Illuminate\Http\Request $request, App\Ser
     } catch (\Exception $e) {
         return redirect('/')->with('error', 'Authorization failed: ' . $e->getMessage());
     }
+});
+
+// Tag management (admin tools)
+Route::prefix('admin/tags')->middleware('auth.secret')->group(function () {
+    Route::get('/', [TagController::class, 'index'])->name('admin.tags');
+    Route::post('/', [TagController::class, 'store']);
+    Route::delete('/{tag}', [TagController::class, 'destroy']);
 });
 
 // Auto-import page - runs all batches automatically

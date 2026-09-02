@@ -15,7 +15,7 @@
                 ['label' => 'Artists', 'value' => $stats['artists'], 'route' => route('artists.index'), 'color' => 'bg-blue-600'],
                 ['label' => 'Albums', 'value' => $stats['albums'], 'route' => route('albums.index'), 'color' => 'bg-green-600'],
                 ['label' => 'Songs', 'value' => $stats['songs'], 'route' => route('songs.index'), 'color' => 'bg-amber-600'],
-                ['label' => 'Tags', 'value' => $stats['tags'], 'route' => route('songs.index'), 'color' => 'bg-pink-600'],
+                ['label' => 'Tags', 'value' => $stats['tags'], 'route' => route('admin.tags', ['key' => env('IMPORT_SECRET', 'musicarchive2024')]), 'color' => 'bg-pink-600'],
                 ['label' => 'Total Size', 'value' => $stats['total_size'] ? round($stats['total_size'] / 1073741824, 1) . ' GB' : '0 GB', 'route' => '#', 'color' => 'bg-gray-600'],
             ];
         @endphp
