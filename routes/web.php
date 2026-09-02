@@ -127,6 +127,66 @@ Route::get('/admin/auto-lyrics', function () {
     return response()->view('auto-lyrics', ['secret' => $secret])->header('Content-Type', 'text/html');
 });
 
+// Assign genres to artists via keyword matching
+Route::get('/admin/assign-genres', function () {
+    $secret = env('IMPORT_SECRET', 'musicarchive2024');
+    if (request('key') !== $secret) {
+        abort(4003);
+    }
+
+    // Create genres and map keywords -> genre names
+    $genres = [
+        'Rock'              => ['rock', 'springsteen', 'u2', 'deep purple', 'led zeppelin', 'pink floyd', 'queen', 'rolling stones', 'ac/dc', 'guns n roses', 'the police', 'dire straits', 'metallica', 'nirvana', 'bon jovi', 'foo fighters', 'pearl jam', 'green day', 'scorpions', 'aerosmith', 'van halen', 'def leppard', 'the beatles', 'inxs', 'radiohead', 'coldplay', 'oasis', 'blur', 'the cure', 'the smiths', 'jarre', 'jeff healey', 'yngwie', 'steve vai', 'joe satriani', 'cream', 'jimi hendrix', 'the who', 'crosby'],
+        'Pop'               => ['pop', 'madonna', 'michael jackson', 'britney', 'taylor swift', 'adele', 'katy perry', 'rihanna', 'justin', 'ed sheeran', 'ariana', 'maroon', 'backstreet', 'nsync', 'whitney', 'mariah', 'elton john', 'phil collins', 'george michael', 'prince', 'jackson 5', 'lady gaga', 'bruno mars', 'lizzo', 'demi lovato', 'selena'],
+        'Classical'         => ['classical', 'mozart', 'beethoven', 'bach', 'chopin', 'vivaldi', 'tchaikovsky', 'handel', 'paganini', 'ludovico', 'yiruma', 'lang lang', 'vienna', 'philharmonic', 'orchestra', 'chamber', 'concerto', 'sonata', 'symphony', 'nocturne', 'piano'],
+        'Jazz'              => ['jazz', 'miles davis', 'john coltrane', 'louis armstrong', 'duke ellington', 'ella fitzgerald', 'nina simone', 'chet baker', 'diana krall', 'norah jones', 'billie holiday', 'count basie', 'herbie hancock', 'thelonious', 'frank sinatra'],
+        'Blues'             => ['blues', 'bb king', 'b.b. king', 'muddy waters', 'howlin', 'john lee hooker', 'robert johnson', 'buddy guy', 'srv', 'stevie ray', 'eric clapton', 'john mayer'],
+        'R&B/Soul'          => ['r&b', 'rnb', 'soul', 'motown', 'stevie wonder', 'ray charles', 'james brown', 'aretha', 'marvin gaye', 'al green', 'otis redding', 'luther vandross', 'boyz ii men', 'usher', 'alicia keys', 'john legend'],
+        'Electronic'        => ['electronic', 'edm', 'dance', 'techno', 'house', 'trance', 'dubstep', 'daft punk', 'depeche mode', 'kraftwerk', 'the chemical brothers', 'prodigy', 'fatboy slim', 'moby', 'garrix', 'skrillex', 'jean-michel jarre'],
+        'Hip-Hop/Rap'       => ['hip', 'hop', 'rap', 'eminem', 'kanye', 'jay-z', 'jay z', 'drake', 'kendrick', 'nas', 'tupac', 'notorious', 'biggie', 'snoop', 'dr. dre', 'wu-tang', 'public enemy', 'run-dmc', 'outkast'],
+        'Metal'             => ['metal', 'iron maiden', 'black sabbath', 'slayer', 'megadeth', 'pantera', 'judas priest', 'motorhead', 'system of a down', 'slipknot', 'opeth', 'dream theater', 'lamb of god'],
+        'Country'           => ['country', 'johnny cash', 'dolly parton', 'garth brooks', 'willy nelson', 'hank williams', 'kenny rogers', 'shania', 'carrie underwood', 'taylor'],
+        'Folk'              => ['folk', 'bob dylan', 'joni mitchell', 'simon & garfunkel', 'simon and garfunkel', 'pete seeger', 'leonard cohen', 'cat stevens', 'tracy chapman', 'vance joy', 'ed sheeran'],
+        'Reggae'            => ['reggae', 'bob marley', 'peter tosh', 'jimmy cliff', 'shaggy', 'sean paul'],
+        'Latin'             => ['latin', 'salsa', 'reggaeton', 'bossa nova', 'shakira', 'ricky martin', 'juanes', 'enrique', 'santana', 'buena vista', 'gipsy kings'],
+        'New Age/Ambient'   => ['yanni', 'enya', 'enigma', 'vangelis', 'kitaro', 'george winston', 'new age', 'ambient', 'relaxation'],
+        'Punk'              => ['punk', 'ramones', 'clash', 'sex pistols', 'the who', 'greenday', 'blink'],
+        'Indie'             => ['indie', 'arctic monkeys', 'the strokes', 'arcade fire', 'vampire weekend', 'mgmt', 'tame impala', 'florence', 'bon iver', 'fleet foxes'],
+        'Soundtrack/OST'    => ['ost', 'soundtrack', 'score', 'original motion', 'open season', 'matrix', 'titanic', 'gladiator', 'inception', 'interstellar'],
+    ];
+
+    $created = 0;
+    $assigned = 0;
+
+    foreach ($genres as $name => $keywords) {
+        $slug = \Illuminate\Support\Str::slug($name);
+        \App\Models\Genre::updateOrCreate(['slug' => $slug], ['name' => $name]);
+
+        foreach (\App\Models\Artist::whereNull('genre_id')->get() as $artist) {
+            $lower = mb_strtolower($artist->name);
+            foreach ($keywords as $kw) {
+                if (mb_strpos($lower, mb_strtolower($kw)) !== false) {
+                    $artist->update(['genre_id' => \App\Models\Genre::where('slug', $slug)->value('id')]);
+                    $assigned++;
+                    break;
+                }
+            }
+        }
+        $created++;
+    }
+
+    \Illuminate\Support\Facades\Cache::forget('dashboard_stats');
+    \Illuminate\Support\Facades\Cache::forget('dashboard_top_genres');
+    \Illuminate\Support\Facades\Cache::forget('genres_index_p1');
+
+    return response()->json([
+        'genres_created' => \App\Models\Genre::count(),
+        'artists_assigned' => $assigned,
+        'artists_without_genre' => \App\Models\Artist::whereNull('genre_id')->count(),
+        'next' => "/admin/warm?key={$secret}",
+    ]);
+});
+
 // Protected import route - runs in batches to avoid Render timeout
 Route::get('/admin/import', function () {
     $secret = env('IMPORT_SECRET', 'musicarchive2024');
