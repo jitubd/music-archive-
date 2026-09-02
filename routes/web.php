@@ -127,6 +127,17 @@ Route::get('/admin/auto-lyrics', function () {
     return response()->view('auto-lyrics', ['secret' => $secret])->header('Content-Type', 'text/html');
 });
 
+// List artists still missing a genre (diagnostic)
+Route::get('/admin/unassigned-artists', function () {
+    $secret = env('IMPORT_SECRET', 'musicarchive2024');
+    if (request('key') !== $secret) {
+        abort(4003);
+    }
+    return response()->json(
+        \App\Models\Artist::whereNull('genre_id')->orderBy('name')->pluck('name')
+    );
+});
+
 // Assign genres to artists via keyword matching
 Route::get('/admin/assign-genres', function () {
     $secret = env('IMPORT_SECRET', 'musicarchive2024');
