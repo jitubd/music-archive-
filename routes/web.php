@@ -147,12 +147,12 @@ Route::get('/admin/assign-genres', function () {
 
     // Create genres and map keywords -> genre names
     $genres = [
-        'Rock'              => ['rock', 'springsteen', 'led zeppelin', 'pink floyd', 'queen', 'rolling stones', 'ac/dc', 'guns n roses', 'the police', 'dire straits', 'metallica', 'nirvana', 'bon jovi', 'foo fighters', 'pearl jam', 'green day', 'scorpions', 'aerosmith', 'van halen', 'def leppard', 'the beatles', 'beatles', 'beatles rearrange', 'inxs', 'radiohead', 'coldplay', 'oasis', 'blur', 'the cure', 'the smiths', 'jarre', 'jeff healey', 'yngwie', 'steve vai', 'joe satriani', 'cream', 'jimi hendrix', 'the who', 'crosby', 'u2', 'deep purple', 'alterbridge', 'audioslave', 'dream theatre', 'eagles', 'eric johnson', 'gary moore', 'guns n', 'journey', 'marillion', 'mark knofler', 'mr.big', 'mr. big', 'ozzy osbourne', 'rainbow', 'red hot chilli peppers', 'sting', 'uriah heep', 'bruce dickinson', 'dio', 'camel', 'doors', 'grunge', 'hard rock', 'progressive', 'yes', 'genesis', 'king crimson', 'rush', 'the band', 'toto', 'john mellencamp', 'tom petty', 'bruce springsteen', 'creed', 'alter bridge', 'jimi', 'hendrix', 'yngwie malmsteen', 'mega'],
-        'Pop'               => ['pop', 'madonna', 'michael jackson', 'britney', 'taylor swift', 'adele', 'katy perry', 'rihanna', 'justin', 'ed sheeran', 'ariana', 'maroon', 'backstreet', 'nsync', 'whitney', 'mariah', 'elton john', 'elton jone', 'phil collins', 'george michael', 'george micheal', 'prince', 'jackson 5', 'lady gaga', 'bruno mars', 'lizzo', 'demi lovato', 'selena', 'air supply', 'akon', 'bryan adams', 'chris de burgh', 'dido', 'james blaunt', 'jewel', 'jim croce', 'lionel richie', 'lobo', 'richard marx', 'semisonic', 'spice girls', 'kelly clarkson', 'avril', 'p!nk', 'christina aguilera', 'nsync', 'spice', 'poets of the fall', 'jason mraz', 'john legend', 'sade', 'mika'],
+        'Rock'              => ['rock', 'springsteen', 'led zeppelin', 'pink floyd', 'queen', 'rolling stones', 'ac/dc', 'guns n roses', 'the police', 'dire straits', 'metallica', 'nirvana', 'bon jovi', 'foo fighters', 'pearl jam', 'green day', 'scorpions', 'aerosmith', 'van halen', 'def leppard', 'the beatles', 'beatles', 'beatles rearrange', 'inxs', 'radiohead', 'coldplay', 'oasis', 'blur', 'the cure', 'the smiths', 'jarre', 'jeff healey', 'yngwie', 'steve vai', 'joe satriani', 'cream', 'jimi hendrix', 'jim morrison', 'john lennon', 'the who', 'crosby', 'u2', 'deep purple', 'alterbridge', 'audioslave', 'dream theatre', 'eagles', 'eric johnson', 'gary moore', 'guns n', 'journey', 'marillion', 'mark knofler', 'mr.big', 'mr. big', 'ozzy osbourne', 'rainbow', 'red hot chilli peppers', 'sting', 'uriah heep', 'bruce dickinson', 'dio', 'camel', 'doors', 'richard wright', 'grunge', 'hard rock', 'progressive', 'yes', 'genesis', 'king crimson', 'rush', 'the band', 'toto', 'john mellencamp', 'tom petty', 'bruce springsteen', 'creed', 'alter bridge', 'jimi', 'hendrix', 'yngwie malmsteen', 'alan parsons', 'travis', 'al stewart', 'chris rea', 'vademola', 'nail young', 'neil young', 'mega'],
+        'Pop'               => ['pop', 'madonna', 'michael jackson', 'britney', 'taylor swift', 'adele', 'katy perry', 'rihanna', 'justin', 'ed sheeran', 'ariana', 'maroon', 'backstreet', 'nsync', 'whitney', 'mariah', 'elton john', 'elton jone', 'phil collins', 'george michael', 'george micheal', 'prince', 'jackson 5', 'lady gaga', 'bruno mars', 'lizzo', 'demi lovato', 'selena', 'air supply', 'akon', 'bryan adams', 'chris de burgh', 'dido', 'james blaunt', 'jewel', 'jim croce', 'lionel richie', 'lobo', 'richard marx', 'semisonic', 'spice girls', 'kelly clarkson', 'avril', 'p!nk', 'christina aguilera', 'nsync', 'spice', 'poets of the fall', 'jason mraz', 'john legend', 'sade', 'mika', 'nail diamond', 'neil diamond'],
         'Classical'         => ['classical', 'mozart', 'beethoven', 'bach', 'chopin', 'vivaldi', 'tchaikovsky', 'handel', 'paganini', 'ludovico', 'yiruma', 'lang lang', 'vienna', 'philharmonic', 'orchestra', 'chamber', 'concerto', 'sonata', 'symphony', 'nocturne', 'piano', 'richard clayderman', 'clayderman', 'vanessa mae', 'vanessa-mae', 'kenny g', 'instrumental', 'music(instrumental)'],
         'Jazz'              => ['jazz', 'miles davis', 'john coltrane', 'louis armstrong', 'duke ellington', 'ella fitzgerald', 'nina simone', 'chet baker', 'diana krall', 'norah jones', 'billie holiday', 'count basie', 'herbie hancock', 'thelonious', 'frank sinatra', 'chet atkins', 'neck & neck'],
         'Blues'             => ['blues', 'bb king', 'b.b. king', 'muddy waters', 'howlin', 'john lee hooker', 'robert johnson', 'buddy guy', 'srv', 'stevie ray', 'eric clapton', 'john mayer'],
-        'R&B/Soul'          => ['r&b', 'rnb', 'soul', 'motown', 'stevie wonder', 'ray charles', 'james brown', 'aretha', 'marvin gaye', 'al green', 'otis redding', 'luther vandross', 'boyz ii men', 'usher', 'alicia keys', 'john legend'],
+        'R&B/Soul'          => ['r&b', 'rnb', 'soul', 'motown', 'stevie wonder', 'ray charles', 'james brown', 'aretha', 'marvin gaye', 'al green', 'otis redding', 'luther vandross', 'boyz ii men', 'usher', 'alicia keys', 'john legend', 'sade', 's a d e'],
         'Electronic'        => ['electronic', 'edm', 'dance', 'techno', 'house', 'trance', 'dubstep', 'daft punk', 'depeche mode', 'kraftwerk', 'the chemical brothers', 'prodigy', 'fatboy slim', 'moby', 'garrix', 'skrillex', 'jean-michel jarre'],
         'Hip-Hop/Rap'       => ['hip', 'hop', 'rap', 'eminem', 'kanye', 'jay-z', 'jay z', 'drake', 'kendrick', 'nas', 'tupac', 'notorious', 'biggie', 'snoop', 'dr. dre', 'wu-tang', 'public enemy', 'run-dmc', 'outkast'],
         'Metal'             => ['metal', 'iron maiden', 'black sabbath', 'slayer', 'megadeth', 'pantera', 'judas priest', 'judas_priest', 'motorhead', 'system of a down', 'slipknot', 'opeth', 'dream theater', 'lamb of god', 'threshold', 'alterbridge', 'mr.big', 'dio', 'ozzy', 'dio'],
@@ -169,21 +169,28 @@ Route::get('/admin/assign-genres', function () {
     $created = 0;
     $assigned = 0;
 
+    $genreIds = [];
     foreach ($genres as $name => $keywords) {
         $slug = \Illuminate\Support\Str::slug($name);
-        \App\Models\Genre::updateOrCreate(['slug' => $slug], ['name' => $name]);
+        $genre = \App\Models\Genre::updateOrCreate(['slug' => $slug], ['name' => $name]);
+        $genreIds[$slug] = $genre->id;
+        $created++;
+    }
 
-        foreach (\App\Models\Artist::whereNull('genre_id')->get() as $artist) {
-            $lower = mb_strtolower($artist->name);
+    $artists = \App\Models\Artist::whereNull('genre_id')->get();
+
+    foreach ($artists as $artist) {
+        $lower = mb_strtolower($artist->name);
+        foreach ($genres as $name => $keywords) {
+            $slug = \Illuminate\Support\Str::slug($name);
             foreach ($keywords as $kw) {
                 if (mb_strpos($lower, mb_strtolower($kw)) !== false) {
-                    $artist->update(['genre_id' => \App\Models\Genre::where('slug', $slug)->value('id')]);
+                    $artist->update(['genre_id' => $genreIds[$slug]]);
                     $assigned++;
-                    break;
+                    break 2;
                 }
             }
         }
-        $created++;
     }
 
     \Illuminate\Support\Facades\Cache::forget('dashboard_stats');
