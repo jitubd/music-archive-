@@ -141,43 +141,39 @@ Route::get('/admin/assign-tags', function () {
         abort(4003);
     }
 
-    // Title keyword -> tag mapping
     $titleRules = [
-        'romantic' => ['love', 'heart', 'kiss', 'lover', 'baby', 'dream', 'forever', 'adore', 'i love', 'want you', 'with you', 'true love', 'passion', 'sweet'],
+        'romantic' => ['love', 'heart', 'kiss', 'lover', 'baby', 'dream', 'forever', 'adore', 'want you', 'with you', 'true love', 'passion', 'sweet'],
         'sad'      => ['rain', 'tears', 'goodbye', 'farewell', 'lonely', 'broken', 'cry', 'pain', 'missing', 'lost', 'hurt', 'memory', 'ghost', 'fade', 'silence', 'stairway'],
         'party'    => ['party', 'dance', 'shake', 'celebrate', 'fun', 'tonight', 'weekend', 'groove', 'disco', 'club', 'move'],
         'upbeat'   => ['sun', 'free', 'fly', 'happy', 'shine', 'smile', 'run', 'jump', 'alive', 'energy', 'fire', 'boom'],
         'workout'  => ['work', 'fight', 'strong', 'power', 'push', 'run', 'burn', 'pump', 'rock'],
-        'study'    => ['piano', 'acoustic', 'guitar', 'classical', 'melody', 'midnight', 'peace'], 
+        'study'    => ['piano', 'acoustic', 'guitar', 'classical', 'melody', 'midnight', 'peace'],
         'sleep'    => ['lullaby', 'calm', 'dream', 'night', 'hush', 'quiet', 'soft', 'slow', 'stars', 'moon'],
         'angry'    => ['rage', 'anger', 'hate', 'fire', 'war', 'rebel', 'riot', 'dead'],
     ];
 
-    $songs = \App\Models\Song::with('album.artist.genre')->get();
-
     $tagIds = \App\Models\Tag::pluck('id', 'name');
-
+    $pairs = [];
     $titleAssigned = 0;
     $fillAssigned = 0;
 
+    $songs = \App\Models\Song::with('album.artist.genre')->get();
+
     foreach ($songs as $song) {
         $title = mb_strtolower($song->title ?? '');
-        $toSync = [];
+        $matchedTags = [];
 
-        // 1. Title keyword matching
         foreach ($titleRules as $tagName => $keywords) {
-            if (isset($tagIds[$tagName])) {
-                foreach ($keywords as $kw) {
-                    if (mb_strpos($title, $kw) !== false) {
-                        $toSync[] = $tagIds[$tagName];
-                        break;
-                    }
+            if (!isset($tagIds[$tagName])) continue;
+            foreach ($keywords as $kw) {
+                if (mb_strpos($title, $kw) !== false) {
+                    $matchedTags[$tagIds[$tagName]] = true;
+                    break;
                 }
             }
         }
 
-        // 2. Genre-based fill (if no title match)
-        if (empty($toSync)) {
+        if (empty($matchedTags)) {
             $genreName = $song->album->artist->genre->name ?? null;
             $fillTag = null;
             switch (strtolower($genreName ?? '')) {
@@ -190,16 +186,24 @@ Route::get('/admin/assign-tags', function () {
                 case 'r&b/soul': case 'hip-hop/rap': $fillTag = 'upbeat'; break;
             }
             if ($fillTag && isset($tagIds[$fillTag])) {
-                $toSync[] = $tagIds[$fillTag];
+                $matchedTags[$tagIds[$fillTag]] = true;
                 $fillAssigned++;
             }
         } else {
             $titleAssigned++;
         }
 
-        if (!empty($toSync)) {
-            $song->tags()->syncWithoutDetaching(array_unique($toSync));
+        foreach (array_keys($matchedTags) as $tagId) {
+            $pairs[] = ['song_id' => $song->id, 'tag_id' => $tagId];
         }
+    }
+
+    // Bulk insert in chunks (existing assignments already in DB are skipped via insertOrIgnore)
+    foreach (array_chunk(array_unique(array_map('json_encode', $pairs)), 500) as $chunk) {
+        $rows = array_map(function ($json) {
+            return json_decode($json, true);
+        }, $chunk);
+        \Illuminate\Support\Facades\DB::table('song_tag')->insertOrIgnore($rows);
     }
 
     \Illuminate\Support\Facades\Cache::forget('dashboard_stats');
@@ -208,6 +212,7 @@ Route::get('/admin/assign-tags', function () {
         'title_matched' => $titleAssigned,
         'genre_filled' => $fillAssigned,
         'untagged' => \App\Models\Song::doesntHave('tags')->count(),
+        'pairs_inserted' => count($pairs),
         'message' => 'Tag assignment complete.',
     ]);
 });
