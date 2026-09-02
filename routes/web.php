@@ -66,9 +66,25 @@ Route::get('/admin/warm', function () {
     }
 });
 
-// Audio download
-Route::get('/download/{song}', function (App\Models\Song $song, App\Services\GoogleDriveService $drive) {
-    return redirect($drive->getDirectUrl($song->drive_file_id));
+// Audio download - proxied through Render to avoid Google "automated queries" block
+Route::get('/download/{songId}', function ($songId, App\Services\GoogleDriveService $drive) {
+    $song = \Illuminate\Support\Facades\Cache::remember("song_download_{$songId}", 3600, function () use ($songId) {
+        return \App\Models\Song::with('album.artist')->whereKey($songId)->first();
+    });
+
+    if (!$song) {
+        abort(404);
+    }
+
+    $artist = $song->album->artist->name ?? 'Unknown';
+    $filename = $song->title . ' - ' . $artist . '.mp3';
+    $filename = preg_replace('/[^\w\-. ]+/u', '_', $filename);
+
+    return $drive->downloadFile(
+        $song->drive_file_id,
+        $filename,
+        $song->mime_type ?: 'audio/mpeg'
+    );
 })->name('song.download');
 
 // Lyrics - cache 1 day in browser
