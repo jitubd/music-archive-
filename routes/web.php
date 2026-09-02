@@ -134,6 +134,84 @@ Route::prefix('admin/tags')->middleware('auth.secret')->group(function () {
     Route::delete('/{tag}', [TagController::class, 'destroy'])->name('admin.tags.destroy');
 });
 
+// Bulk assign tags to songs based on title keywords & artist genre
+Route::get('/admin/assign-tags', function () {
+    $secret = env('IMPORT_SECRET', 'musicarchive2024');
+    if (request('key') !== $secret) {
+        abort(4003);
+    }
+
+    // Title keyword -> tag mapping
+    $titleRules = [
+        'romantic' => ['love', 'heart', 'kiss', 'lover', 'baby', 'dream', 'forever', 'adore', 'i love', 'want you', 'with you', 'true love', 'passion', 'sweet'],
+        'sad'      => ['rain', 'tears', 'goodbye', 'farewell', 'lonely', 'broken', 'cry', 'pain', 'missing', 'lost', 'hurt', 'memory', 'ghost', 'fade', 'silence', 'stairway'],
+        'party'    => ['party', 'dance', 'shake', 'celebrate', 'fun', 'tonight', 'weekend', 'groove', 'disco', 'club', 'move'],
+        'upbeat'   => ['sun', 'free', 'fly', 'happy', 'shine', 'smile', 'run', 'jump', 'alive', 'energy', 'fire', 'boom'],
+        'workout'  => ['work', 'fight', 'strong', 'power', 'push', 'run', 'burn', 'pump', 'rock'],
+        'study'    => ['piano', 'acoustic', 'guitar', 'classical', 'melody', 'midnight', 'peace'], 
+        'sleep'    => ['lullaby', 'calm', 'dream', 'night', 'hush', 'quiet', 'soft', 'slow', 'stars', 'moon'],
+        'angry'    => ['rage', 'anger', 'hate', 'fire', 'war', 'rebel', 'riot', 'dead'],
+    ];
+
+    $songs = \App\Models\Song::with('album.artist.genre')->get();
+
+    $tagIds = \App\Models\Tag::pluck('id', 'name');
+
+    $titleAssigned = 0;
+    $fillAssigned = 0;
+
+    foreach ($songs as $song) {
+        $title = mb_strtolower($song->title ?? '');
+        $toSync = [];
+
+        // 1. Title keyword matching
+        foreach ($titleRules as $tagName => $keywords) {
+            if (isset($tagIds[$tagName])) {
+                foreach ($keywords as $kw) {
+                    if (mb_strpos($title, $kw) !== false) {
+                        $toSync[] = $tagIds[$tagName];
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 2. Genre-based fill (if no title match)
+        if (empty($toSync)) {
+            $genreName = $song->album->artist->genre->name ?? null;
+            $fillTag = null;
+            switch (strtolower($genreName ?? '')) {
+                case 'rock': case 'metal': $fillTag = 'workout'; break;
+                case 'pop': $fillTag = 'upbeat'; break;
+                case 'classical': case 'new age/ambient': $fillTag = 'study'; break;
+                case 'jazz': case 'blues': $fillTag = 'chill'; break;
+                case 'reggae': $fillTag = 'party'; break;
+                case 'country': case 'folk': $fillTag = 'chill'; break;
+                case 'r&b/soul': case 'hip-hop/rap': $fillTag = 'upbeat'; break;
+            }
+            if ($fillTag && isset($tagIds[$fillTag])) {
+                $toSync[] = $tagIds[$fillTag];
+                $fillAssigned++;
+            }
+        } else {
+            $titleAssigned++;
+        }
+
+        if (!empty($toSync)) {
+            $song->tags()->syncWithoutDetaching(array_unique($toSync));
+        }
+    }
+
+    \Illuminate\Support\Facades\Cache::forget('dashboard_stats');
+
+    return response()->json([
+        'title_matched' => $titleAssigned,
+        'genre_filled' => $fillAssigned,
+        'untagged' => \App\Models\Song::doesntHave('tags')->count(),
+        'message' => 'Tag assignment complete.',
+    ]);
+});
+
 // Bulk create suggested tags
 Route::get('/admin/create-tags', function () {
     $secret = env('IMPORT_SECRET', 'musicarchive2024');
